@@ -15,7 +15,7 @@ final class WeatherTableViewCell: UITableViewCell {
 
     private lazy var dataLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = .systemFont(ofSize: 19, weight: .bold)
         label.textAlignment = .center
         label.textColor = .white
         return label
@@ -23,7 +23,7 @@ final class WeatherTableViewCell: UITableViewCell {
 
     private lazy var temperatureLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = .systemFont(ofSize: 19, weight: .bold)
         label.textAlignment = .center
         label.textColor = .white
         return label
@@ -31,7 +31,7 @@ final class WeatherTableViewCell: UITableViewCell {
 
     private lazy var descriptionForecastLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .bold)
+        label.font = .systemFont(ofSize: 19, weight: .bold)
         label.textAlignment = .center
         label.textColor = .white
         return label
@@ -49,7 +49,7 @@ final class WeatherTableViewCell: UITableViewCell {
     private lazy var informationStackView: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [temperatureLabel, descriptionForecastLabel],
                                     axis: .horizontal,
-                                    spacing: 16,
+                                    spacing: 12,
                                     distribution: .equalSpacing)
         return stackView
     }()
@@ -107,17 +107,18 @@ final class WeatherTableViewCell: UITableViewCell {
 extension WeatherTableViewCell {
     private func setupConstraints() {
         dataLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
+            make.leading.equalToSuperview().offset(12)
             make.centerY.equalToSuperview()
         }
 
         imageIcon.snp.makeConstraints { make in
             make.leading.equalTo(dataLabel.snp.trailing).offset(8)
             make.centerY.equalToSuperview()
+            make.height.width.equalTo(70)
         }
 
         informationStackView.snp.makeConstraints { make in
-            make.leading.equalTo(imageIcon.snp.trailing).inset(8)
+            make.leading.equalTo(imageIcon.snp.trailing).inset(-8)
             make.centerY.equalToSuperview()
         }
     }
