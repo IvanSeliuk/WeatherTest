@@ -85,7 +85,8 @@ final class WeatherTableViewCell: UITableViewCell {
         return ""
     }
 
-    func configureCell(with weather: List) {
+    func configureCell(with weather: List?) {
+        guard let weather else { return }
         dataLabel.text = extractDay(from: weather.dtTxt)
         descriptionForecastLabel.text = "\(weather.weather.first?.description.firstWordCapitalized() ?? "")"
         

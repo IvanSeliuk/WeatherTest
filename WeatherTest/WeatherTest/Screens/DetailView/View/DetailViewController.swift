@@ -9,8 +9,13 @@
 import UIKit
 
 final class DetailViewController: UIViewController {
-    var weather: SearchWeather?
 
+
+    // MARK: - Properties
+    var weather: SearchWeather?
+    var weatherViewModel: DetailViewModel?
+
+    // MARK: - Init
     init(weather: SearchWeather? = nil) {
         super.init(nibName: nil, bundle: nil)
         self.weather = weather
@@ -20,7 +25,7 @@ final class DetailViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
-    lazy var titleCityLabel: UILabel = {
+    private lazy var titleCityLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 20, weight: .bold)
         label.textAlignment = .center
@@ -28,7 +33,7 @@ final class DetailViewController: UIViewController {
         return label
     }()
 
-    lazy var temperatureLabel: UILabel = {
+    private lazy var temperatureLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 56, weight: .light)
         label.textAlignment = .center
@@ -36,7 +41,7 @@ final class DetailViewController: UIViewController {
         return label
     }()
 
-    lazy var descriptionForecastLabel: UILabel = {
+    private lazy var descriptionForecastLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 20, weight: .bold)
         label.textAlignment = .center
@@ -53,7 +58,7 @@ final class DetailViewController: UIViewController {
         return image
     }()
 
-    lazy var temperatureStackView: UIStackView = {
+    private lazy var temperatureStackView: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [temperatureLabel, imageIcon],
                                     axis: .horizontal,
                                     spacing: 4,
@@ -61,7 +66,7 @@ final class DetailViewController: UIViewController {
         return stackView
     }()
 
-    lazy var informationStackView: UIStackView = {
+    private lazy var informationStackView: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [titleCityLabel, temperatureStackView, descriptionForecastLabel],
                                     axis: .vertical,
                                     spacing: 4,
@@ -69,6 +74,7 @@ final class DetailViewController: UIViewController {
         return stackView
     }()
 
+    // MARK: - LifeCycleVC
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
@@ -77,6 +83,7 @@ final class DetailViewController: UIViewController {
         setupNavigationBar()
     }
 
+    // MARK: - Metods
     private func setupNavigationBar() {
         navigationController?.navigationBar.tintColor = UIColor.white
     }
@@ -96,12 +103,6 @@ final class DetailViewController: UIViewController {
         view.layer.insertSublayer(gradientLayer, at: 0)
     }
 
-    func setupConstraints() {
-        informationStackView.snp.makeConstraints { make in
-            make.centerX.centerY.equalToSuperview()
-        }
-    }
-
     private func configureWeatherForecast(weather: SearchWeather) {
         titleCityLabel.text = weather.name.uppercased()
 
@@ -116,6 +117,15 @@ final class DetailViewController: UIViewController {
         FileServiceManager.shared.getImage(from: API.icon.getIconUrl(by: weather.weather.first?.icon ?? "")) { [weak self] image in
             guard let self = self else { return }
             self.imageIcon.image = image
+        }
+    }
+}
+
+// MARK: - Constraints
+extension DetailViewController {
+    func setupConstraints() {
+        informationStackView.snp.makeConstraints { make in
+            make.centerX.centerY.equalToSuperview()
         }
     }
 }

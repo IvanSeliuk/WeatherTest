@@ -67,7 +67,8 @@ final class TemperatureCollectionViewCell: UICollectionViewCell {
         return ""
     }
 
-    func configureCell(with weather: List) {
+    func configureCell(with weather: List?) {
+        guard let weather else { return }
         timeLabel.text = extractTime(from: weather.dtTxt)
 
         if Setting.shared.currentLanguage == "en" {

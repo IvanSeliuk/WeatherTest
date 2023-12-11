@@ -12,6 +12,8 @@ protocol Weather {}
 
 class WeatherViewController: UIViewController {
 
+    // MARK: - Properties
+    var weatherViewModel: WeatherViewModel?
     var locationManager = CLLocationManager()
 
     private var weather: Weather? {
@@ -21,9 +23,10 @@ class WeatherViewController: UIViewController {
         }
     }
 
-    var header: [AnyHashable: Any]?
+    private let numberOfItemsForDay = 9
+    private var header: [AnyHashable: Any]?
 
-    lazy var titleLabel: UILabel = {
+    private lazy var titleLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 24, weight: .bold)
         label.textAlignment = .center
@@ -32,7 +35,7 @@ class WeatherViewController: UIViewController {
         return label
     }()
 
-    lazy var titleCityLabel: UILabel = {
+    private lazy var titleCityLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 14, weight: .bold)
         label.textAlignment = .center
@@ -40,7 +43,7 @@ class WeatherViewController: UIViewController {
         return label
     }()
 
-    lazy var temperatureLabel: UILabel = {
+    private lazy var temperatureLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 56, weight: .light)
         label.textAlignment = .center
@@ -48,7 +51,7 @@ class WeatherViewController: UIViewController {
         return label
     }()
 
-    lazy var descriptionForecastLabel: UILabel = {
+    private lazy var descriptionForecastLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 20, weight: .bold)
         label.textAlignment = .center
@@ -65,7 +68,7 @@ class WeatherViewController: UIViewController {
         return image
     }()
 
-    lazy var dateLabel: UILabel = {
+    private lazy var dateLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 14, weight: .light)
         label.frame = CGRect(x: 0, y: 0, width: 200, height: 40)
@@ -75,7 +78,7 @@ class WeatherViewController: UIViewController {
         return label
     }()
 
-    lazy var loaderView: UIView = {
+    private lazy var loaderView: UIView = {
         let view = UIView()
         view.backgroundColor = .white
         view.alpha = 0.5
@@ -83,7 +86,7 @@ class WeatherViewController: UIViewController {
         return view
     }()
 
-    lazy var temperatureStackView: UIStackView = {
+    private lazy var temperatureStackView: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [temperatureLabel, imageIcon],
                                     axis: .horizontal,
                                     spacing: 4,
@@ -91,7 +94,7 @@ class WeatherViewController: UIViewController {
         return stackView
     }()
 
-    lazy var informationStackView: UIStackView = {
+    private lazy var informationStackView: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [titleLabel, titleCityLabel, temperatureStackView, descriptionForecastLabel],
                                     axis: .vertical,
                                     spacing: 4,
@@ -110,9 +113,6 @@ class WeatherViewController: UIViewController {
         collectionView.backgroundColor = .clear
         collectionView.register(TemperatureCollectionViewCell.self,
                                 forCellWithReuseIdentifier: TemperatureCollectionViewCell.reuseIdentifier)
-        collectionView.layer.cornerRadius = 10
-        collectionView.layer.borderColor = UIColor.lightGray.cgColor
-        collectionView.layer.borderWidth = 1
         collectionView.showsHorizontalScrollIndicator = false
         return collectionView
     }()
@@ -124,9 +124,6 @@ class WeatherViewController: UIViewController {
         table.register(WeatherTableViewCell.self,
                        forCellReuseIdentifier: WeatherTableViewCell.reuseIdentifier)
         table.backgroundColor = UIColor.clear
-        table.layer.cornerRadius = 10
-        table.layer.borderColor = UIColor.lightGray.cgColor
-        table.layer.borderWidth = 1
         table.allowsSelection = false
         table.showsVerticalScrollIndicator = false
         return table
@@ -186,9 +183,12 @@ class WeatherViewController: UIViewController {
         return textField
     }()
 
+    // MARK: - LifeCycleVC
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        viewModelInitialization()
+        weatherViewModel?.weatherDelegate = self
         setupConstraints()
         setupNavigationBar()
         setupGradient()
@@ -204,6 +204,7 @@ class WeatherViewController: UIViewController {
         locationManager.stopUpdatingLocation()
     }
 
+    // MARK: - Metods
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         textFieldCity.resignFirstResponder()
     }
@@ -230,6 +231,29 @@ class WeatherViewController: UIViewController {
         }
     }
 
+    private func viewModelInitialization() {
+        weatherViewModel = WeatherViewModel(weather: weather)
+    }
+
+    private func configureWeatherForecast(weather: Weather?) {
+        if let weather = weather as? CoordinateWeather {
+            titleLabel.text = "My Location".localized
+            titleCityLabel.text = weather.city.name.uppercased()
+
+            guard let item = weather.list.first else { return }
+            temperatureLabel.text = "\(weatherViewModel?.setLocalized(weather: weather) ?? "")" + "ºC".localized
+            descriptionForecastLabel.text = "\(item.weather.first?.description.firstWordCapitalized() ?? "")"
+
+            FileServiceManager.shared.getImage(from: API.icon.getIconUrl(by: item.weather.first?.icon ?? "")) { [weak self] image in
+                guard let self = self else { return }
+                self.imageIcon.image = image
+            }
+        }
+    }
+}
+
+// MARK: - Constraints
+extension WeatherViewController {
     private func setupConstraints() {
         textFieldCity.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(8)
@@ -261,158 +285,41 @@ class WeatherViewController: UIViewController {
             make.edges.equalToSuperview()
         }
     }
+}
 
-    private func configureWeatherForecast(weather: Weather) {
-        if let weather = weather as? CoordinateWeather {
-            titleLabel.text = "My Location".localized
-            titleCityLabel.text = weather.city.name.uppercased()
-
-            guard let item = weather.list.first else { return }
-            setLocalized(weather: weather)
-            descriptionForecastLabel.text = "\(item.weather.first?.description.firstWordCapitalized() ?? "")"
-
-            FileServiceManager.shared.getImage(from: API.icon.getIconUrl(by: item.weather.first?.icon ?? "")) { [weak self] image in
-                guard let self = self else { return }
-                self.imageIcon.image = image
-            }
-        }
-    }
-
-    func setupLocationManager() {
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-    }
-
-    private func alertInternetConnection() {
-        let alertController = UIAlertController(title: "No Internet connection",
-                                                message: "Please, connect to the Internet. Would you like to download the data from the cache?",
-                                                preferredStyle: .alert)
-        let loadCache = UIAlertAction(title: "Yes", style: .default) {_ in
-            self.weather = FileServiceManager.shared.loadWeatherData()
-            guard let weather = self.weather else { return }
-            self.configureWeatherForecast(weather: weather)
-            self.lastUpdate()
-            print("Нажата первая кнопка")
-        }
-        let cancelAction = UIAlertAction(title: "No", style: .default, handler: nil)
-
-        alertController.addAction(loadCache)
-        alertController.addAction(cancelAction)
-        present(alertController, animated: true, completion: nil)
-    }
-
-    func sendCoordinatesToAPI(latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
-        activityIndicator.startAnimating()
-        loaderView.isHidden = false
-        NetworkManager.shared.getWeatherData(with: API.coordinate.getCoordinate(lat: latitude,
-                                                                                lon: longitude)) {
-            [self] (result: Result<CoordinateWeather, APError>, header) in
-            self.activityIndicator.stopAnimating()
-            loaderView.isHidden = true
-            switch result {
-            case .success(let weather):
-                self.weather = weather
-                print()
-                FileServiceManager.shared.saveWeatherData(weather)
-                self.configureWeatherForecast(weather: weather)
-            case .failure(let error):
-                switch error {
-                case .invalidData: self.invalidDataAlert()
-                case .invalidResponse: self.invalidResponseAlert()
-                case .invalidURL: self.invalidURLAlert()
-                case .unableToComplete: self.unableToCompleteAlert()
-                }
-            }
-
-            if let headers = header, let dateString = headers[AnyHashable("Date")] as? String {
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
-
-                if let date = dateFormatter.date(from: dateString) {
-                    dateFormatter.dateFormat = "HH:mm:ss"
-                    Setting.shared.requestDate = date
-                }
-            }
-        }
-    }
-
-    func extractTime(from dateString: String) -> String? {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-
-        if let date = dateFormatter.date(from: dateString) {
-            dateFormatter.dateFormat = "HH"
-            let timeString = dateFormatter.string(from: date)
-            return timeString
-        }
-        return ""
-    }
-
-    func setLocalized(weather: Weather) {
-        if let weather = weather as? CoordinateWeather {
-            guard let item = weather.list.first else { return }
-            if Setting.shared.currentLanguage == "en" {
-                temperatureLabel.text = "\(Int(item.main.temp))" + "ºC".localized
-            } else {
-                temperatureLabel.text = "\(item.main.temp.celsius)" + "ºC".localized
-            }
-        }
-    }
-
-    private func lastUpdate() {
-        let currentDate = Date()
-        let timeDifference = currentDate.timeIntervalSince(Setting.shared.requestDate)
-
-        let timeDifferenceOfMinute = Int(timeDifference) / 60
-        let timeDifferenceInterval = UpdateDate(timeDifference: timeDifferenceOfMinute)
-
-        switch timeDifferenceInterval {
-        case .lessThanMinute:
-            dateLabel.text = "Uploaded: less than a min"
-        case .fromMinuteToHour:
-            dateLabel.text = "Uploaded: \(timeDifferenceOfMinute) min ago"
-        case .fromHourTo23Hours:
-            dateLabel.text = "Uploaded: \(timeDifferenceOfMinute) / 60) hour ago"
-        case .moreThanDay:
-            dateLabel.text = "Uploaded: \(timeDifferenceOfMinute) / 60 / 24) day ago"
-        }
-    }
-
-    private func reloadView() {
-        guard let weather else { return }
-        setLocalized(weather: weather)
-        tableView.reloadData()
-        collectionView.reloadData()
-    }
-
+// MARK: - @objcMetods
+extension WeatherViewController {
     @objc private func searchBarButtonAction() {
         textFieldCity.isHidden.toggle()
     }
 
     @objc private func ruLocalizeButtonAction(_ sender: UIBarButtonItem) {
         Setting.shared.currentLanguage = Setting.shared.languageCode[sender.tag]
-        reloadView()
+        temperatureLabel.text = weatherViewModel?.setLocalized(weather: weather) ?? "" + "ºC".localized
+        weatherViewModel?.reloadView()
     }
 
     @objc private func enLocalizeButtonAction(_ sender: UIBarButtonItem) {
         Setting.shared.currentLanguage = Setting.shared.languageCode[sender.tag]
-        reloadView()
+
+        temperatureLabel.text = weatherViewModel?.setLocalized(weather: weather) ?? "" + "ºC".localized
+        weatherViewModel?.reloadView()
     }
 }
 
 // MARK: - CollectionViewDataSource
 extension WeatherViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 9
+        return numberOfItemsForDay
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: TemperatureCollectionViewCell.reuseIdentifier, for: indexPath) as? TemperatureCollectionViewCell else {
             return UICollectionViewCell()
         }
-        if let weather = weather as? CoordinateWeather {
-            cell.configureCell(with: weather.list[indexPath.item])
-        }
+
+        cell.configureCell(with: weatherViewModel?.cellForItemCollectionView(at: indexPath.row))
+        
         return cell
     }
 
@@ -434,10 +341,7 @@ extension WeatherViewController: UITableViewDelegate {
 // MARK: - TableViewDataSource
 extension WeatherViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let weather = weather as? CoordinateWeather else {
-            return 0
-        }
-        return weather.list.filter({ extractTime(from: $0.dtTxt) == "12" }).count
+        return weatherViewModel?.numberOfRowsTableView() ?? 0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -445,11 +349,10 @@ extension WeatherViewController: UITableViewDataSource {
                                                        for: indexPath) as? WeatherTableViewCell else {
             return UITableViewCell()
         }
-        if let weather = weather as? CoordinateWeather {
-            let item = weather.list.filter({ extractTime(from: $0.dtTxt) == "12" })[indexPath.row]
-            cell.configureCell(with: item)
-        }
+
+        cell.configureCell(with: weatherViewModel?.filterWeatherCellForRow(at: indexPath.row))
         cell.backgroundColor = .clear
+
         return cell
     }
 }
@@ -460,15 +363,12 @@ extension WeatherViewController: CLLocationManagerDelegate {
         guard let location = locations.last else {
             return
         }
-        if NetworkMonitor.shared.isConnected {
-            sendCoordinatesToAPI(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
-        } else {
-            self.alertInternetConnection()
-        }
+        weatherViewModel?.checkNetworkConnection(latitude: location.coordinate.latitude, 
+                                                 longitude: location.coordinate.longitude)
         locationManager.stopUpdatingLocation()
     }
 
-    func checkLocationEnabled() {
+    private func checkLocationEnabled() {
         DispatchQueue.global().async {
             if CLLocationManager.locationServicesEnabled() {
                 DispatchQueue.main.async {
@@ -481,12 +381,17 @@ extension WeatherViewController: CLLocationManagerDelegate {
         }
     }
 
-    func checkAuthorization() {
+    private func setupLocationManager() {
+        locationManager.delegate = self
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+    }
+
+    private func checkAuthorization() {
         switch locationManager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.startUpdatingLocation()
         case .denied:
-            print("user dont allow")
+            print("User don't allow")
         case .notDetermined:
             locationManager.requestWhenInUseAuthorization()
         default: break
@@ -502,24 +407,100 @@ extension WeatherViewController: CLLocationManagerDelegate {
 extension WeatherViewController: UITextFieldDelegate {
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
-        if let city = textField.text {
-            NetworkManager.shared.getWeatherData(with: API.citySearch.getCity(by: city)) { [self] (result: Result<SearchWeather, APError>, header) in
-                switch result {
-                case .success(let weather):
-                    self.weather = weather
-                    let viewController = DetailViewController(weather: weather)
-                    navigationController?.pushViewController(viewController, animated: true)
-                case .failure(let error):
-                    switch error {
-                    case .invalidData: self.invalidDataAlert()
-                    case .invalidResponse: self.invalidResponseAlert()
-                    case .invalidURL: self.invalidURLAlert()
-                    case .unableToComplete: self.unableToCompleteAlert()
-                    }
-                }
-            }
-        }
+        weatherViewModel?.getWeatherFrom(city: textField.text)
         textField.text = ""
         return true
+    }
+}
+
+// MARK: - WeatherViewModelDelegate
+extension WeatherViewController: WeatherViewModelDelegate {
+    func didReloadStackView() {
+        if let weather = weatherViewModel?.weather {
+            configureWeatherForecast(weather: weather)
+        }
+    }
+
+    func didStartFetchingData() {
+        activityIndicator.startAnimating()
+        loaderView.isHidden = false
+    }
+
+    func didFinishFetchingData() {
+        activityIndicator.stopAnimating()
+        loaderView.isHidden = true
+    }
+
+    func updateBordersAndCornerRadius() {
+        tableView.layer.cornerRadius = 10
+        tableView.layer.borderColor = UIColor.lightGray.cgColor
+        tableView.layer.borderWidth = 1
+        collectionView.layer.cornerRadius = 10
+        collectionView.layer.borderColor = UIColor.lightGray.cgColor
+        collectionView.layer.borderWidth = 1
+    }
+
+    func didReloadListView() {
+        tableView.reloadData()
+        collectionView.reloadData()
+    }
+
+    func alertInternetConnection() {
+        let alertController = UIAlertController(title: "No Internet connection",
+                                                message: "Please, connect to the Internet. Would you like to download the data from the cache?",
+                                                preferredStyle: .alert)
+        let loadCache = UIAlertAction(title: "Yes", style: .default) {_ in
+            self.weatherViewModel?.weather = FileServiceManager.shared.loadWeatherData()
+            self.dateLabel.text = self.weatherViewModel?.timeIntervalCalculation()
+            self.updateBordersAndCornerRadius()
+            self.weatherViewModel?.reloadView()
+        }
+        let cancelAction = UIAlertAction(title: "No", style: .default, handler: nil)
+
+        alertController.addAction(loadCache)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true, completion: nil)
+    }
+
+    func pushViewController(weather: SearchWeather) {
+        let viewController = DetailViewController(weather: weather)
+        navigationController?.pushViewController(viewController, animated: true)
+    }
+
+    func invalidDataAlert() {
+        let alertController = UIAlertController(title: "Server Error",
+                                                message: "The data received from the server was invalid. Please contact support.",
+                                                preferredStyle: .alert)
+        let cancelAction = UIAlertAction(title: "Cancel", style: .default, handler: nil)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true, completion: nil)
+    }
+
+    //MARK: - Network Alert
+    func invalidResponseAlert() {
+        let alertController = UIAlertController(title: "Server Error",
+                                                message: "Invalid response from the server. Please try again later or contact support.",
+                                                preferredStyle: .alert)
+        let cancelAction = UIAlertAction(title: "Cancel", style: .default, handler: nil)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true, completion: nil)
+    }
+
+    func invalidURLAlert() {
+        let alertController = UIAlertController(title: "Server Error",
+                                                message: "There was an issue connecting to the server. If this persists, please contact support.",
+                                                preferredStyle: .alert)
+        let cancelAction = UIAlertAction(title: "Cancel", style: .default, handler: nil)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true, completion: nil)
+    }
+
+    func unableToCompleteAlert() {
+        let alertController = UIAlertController(title: "Server Error",
+                                                message: "Unable to complete your request at this time. Please check your internet connection.",
+                                                preferredStyle: .alert)
+        let cancelAction = UIAlertAction(title: "Cancel", style: .default, handler: nil)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true, completion: nil)
     }
 }

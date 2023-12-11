@@ -11,6 +11,8 @@ import SnapKit
 final class LoadingViewController: UIViewController {
 
     // MARK: - Properties
+    var loadingViewModel = LoadingViewModel()
+
     private lazy var textLabel: UILabel = {
         let text = UILabel()
         text.translatesAutoresizingMaskIntoConstraints = false
@@ -34,7 +36,7 @@ final class LoadingViewController: UIViewController {
         return viewLabel
     }()
 
-    // MARK: LifeCycleVc
+    // MARK: LifeCycleVC
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -54,32 +56,6 @@ final class LoadingViewController: UIViewController {
         view.addSubview(textLabel)
     }
 
-    private func setupCostraints() {
-        textLabel.snp.makeConstraints { make in
-            make.centerX.centerY.equalToSuperview()
-        }
-    }
-
-    private func calcTrig(segment: Segment, size: CGFloat, angle: CGFloat) -> [Segment: CGFloat] {
-        switch segment {
-        case .coordinateX:
-            let coordinateX = size
-            let coordinateY = tan(angle * .pi/180) * coordinateX
-            let height = coordinateX / cos(angle * .pi/180)
-            return [ .coordinateX: coordinateX, .coordinateY: coordinateY, .height: height]
-        case .coordinateY:
-            let coordinateY = size
-            let coordinateX = coordinateY / tan(angle * .pi/180)
-            let height = coordinateY / sin(angle * .pi/180)
-            return [ .coordinateX: coordinateX, .coordinateY: coordinateY, .height: height]
-        case .height:
-            let height = size
-            let coordinateX = cos(angle * .pi/180) * height
-            let coordinateY = sin(angle * .pi/180) * height
-            return [ .coordinateX: coordinateX, .coordinateY: coordinateY, .height: height]
-        }
-    }
-
     private func rightShadow() {
         UIView.animate(withDuration: 1, delay: 0, options: .curveEaseIn) {
             self.textLabel.alpha = 0.75
@@ -92,7 +68,7 @@ final class LoadingViewController: UIViewController {
     private func rightHalfBottomShadow() {
         UIView.animate(withDuration: 0.75, delay: 0, options: .curveLinear) {
             self.textLabel.alpha = 1
-            let trig = self.calcTrig(segment: .height, size: 10, angle: 22.5)
+            let trig = self.loadingViewModel.calcTrig(segment: .height, size: 10, angle: 22.5)
             let coordinateX = trig[.coordinateX]
             let coordinateY = trig[.coordinateY]
             guard let coordinateX = coordinateX, let coordinateY = coordinateY else { return }
@@ -105,7 +81,7 @@ final class LoadingViewController: UIViewController {
 
     private func rightBottomShadow() {
         UIView.animate(withDuration: 0.4, delay: 0, options: .curveLinear) {
-            let trig = self.calcTrig(segment: .height, size: 10, angle: 45)
+            let trig = self.loadingViewModel.calcTrig(segment: .height, size: 10, angle: 45)
             let coordinateX = trig[.coordinateX]
             let coordinateY = trig[.coordinateY]
             guard let coordinateX = coordinateX, let coordinateY = coordinateY else { return }
@@ -118,7 +94,7 @@ final class LoadingViewController: UIViewController {
 
     private func halfRightBottomShadow() {
         UIView.animate(withDuration: 0.3, delay: 0, options: .curveLinear) {
-            let trig = self.calcTrig(segment: .height, size: 10, angle: 67.5)
+            let trig = self.loadingViewModel.calcTrig(segment: .height, size: 10, angle: 67.5)
             let coordinateX = trig[.coordinateX]
             let coordinateY = trig[.coordinateY]
             guard let coordinateX = coordinateX, let coordinateY = coordinateY else { return }
@@ -131,7 +107,7 @@ final class LoadingViewController: UIViewController {
 
     private func bottomShadow() {
         UIView.animate(withDuration: 0.3, delay: 0, options: .curveLinear) {
-            let trig = self.calcTrig(segment: .height, size: 10, angle: 90)
+            let trig = self.loadingViewModel.calcTrig(segment: .height, size: 10, angle: 90)
             let coordinateX = trig[.coordinateX]
             let coordinateY = trig[.coordinateY]
             guard let coordinateX = coordinateX, let coordinateY = coordinateY else { return }
@@ -144,7 +120,7 @@ final class LoadingViewController: UIViewController {
 
     private func halfLeftBottomShadow() {
         UIView.animate(withDuration: 0.8, delay: 0, options: .curveLinear) {
-            let trig = self.calcTrig(segment: .height, size: 10, angle: 112.5)
+            let trig = self.loadingViewModel.calcTrig(segment: .height, size: 10, angle: 112.5)
             let coordinateX = trig[.coordinateX]
             let coordinateY = trig[.coordinateY]
             guard let coordinateX = coordinateX, let coordinateY = coordinateY else { return }
@@ -157,7 +133,7 @@ final class LoadingViewController: UIViewController {
 
     private func leftBottomShadow() {
         UIView.animate(withDuration: 1, delay: 0, options: .curveEaseOut) {
-            let trig = self.calcTrig(segment: .height, size: 10, angle: 135)
+            let trig = self.loadingViewModel.calcTrig(segment: .height, size: 10, angle: 135)
             let coordinateX = trig[.coordinateX]
             let coordinateY = trig[.coordinateY]
             guard let coordinateX = coordinateX, let coordinateY = coordinateY else { return }
@@ -171,7 +147,7 @@ final class LoadingViewController: UIViewController {
 
     private func lastShadow() {
         UIView.animate(withDuration: 1.8, delay: 0, options: .curveEaseOut) {
-            let trig = self.calcTrig(segment: .height, size: 10, angle: 157.5)
+            let trig = self.loadingViewModel.calcTrig(segment: .height, size: 10, angle: 157.5)
             let coordinateX = trig[.coordinateX]
             let coordinateY = trig[.coordinateY]
             guard let coordinateX = coordinateX, let coordinateY = coordinateY else { return }
@@ -192,5 +168,14 @@ final class LoadingViewController: UIViewController {
         transition.subtype = .fromRight
         navigationController?.view.layer.add(transition, forKey: nil)
         navigationController?.pushViewController(viewController, animated: true)
+    }
+}
+
+// MARK: - Costraints
+extension LoadingViewController {
+    private func setupCostraints() {
+        textLabel.snp.makeConstraints { make in
+            make.centerX.centerY.equalToSuperview()
+        }
     }
 }
