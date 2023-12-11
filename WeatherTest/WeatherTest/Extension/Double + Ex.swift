@@ -8,6 +8,7 @@
 import Foundation
 
 extension Double {
+    
     var celsius: Int {
         Int(Double(self) - 273.15)
     }

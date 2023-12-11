@@ -30,7 +30,7 @@ final class LoadingViewController: UIViewController {
         let viewLabel = UIView()
         viewLabel.frame = view.bounds
         viewLabel.alpha = 0.90
-        viewLabel.backgroundColor = UIColor(named: NameColor.colorDark.rawValue)
+        viewLabel.backgroundColor = .colorDark
         return viewLabel
     }()
 
@@ -50,9 +50,8 @@ final class LoadingViewController: UIViewController {
     private func setupUI() {
         view.addSubview(shadowView)
         view.bringSubviewToFront(shadowView)
-        view.backgroundColor = UIColor(named: NameColor.colorLight.rawValue)
+        view.backgroundColor = .colorLight
         view.addSubview(textLabel)
-
     }
 
     private func setupCostraints() {

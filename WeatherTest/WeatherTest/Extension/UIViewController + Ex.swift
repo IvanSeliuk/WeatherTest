@@ -10,7 +10,6 @@ import UIKit
 extension UIViewController {
 
     //MARK: - Network Alert
-
     func invalidDataAlert() {
         let alertController = UIAlertController(title: "Server Error",
                                                 message: "The data received from the server was invalid. Please contact support.",
@@ -47,6 +46,7 @@ extension UIViewController {
         present(alertController, animated: true, completion: nil)
     }
 
+    //MARK: - Location Alert
     func presentSettingsLocationAlert() {
         let alertController = UIAlertController(title: "Your geolocation service is off",
                                                 message: "Go to Settings?",
