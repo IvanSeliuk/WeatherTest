@@ -78,14 +78,6 @@ class WeatherViewController: UIViewController {
         return label
     }()
 
-    private lazy var loaderView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .white
-        view.alpha = 0.5
-        view.isHidden = true
-        return view
-    }()
-
     private lazy var temperatureStackView: UIStackView = {
         let stackView = UIStackView(arrangedSubviews: [temperatureLabel, imageIcon],
                                     axis: .horizontal,
@@ -226,7 +218,7 @@ class WeatherViewController: UIViewController {
     }
 
     private func setupView() {
-        [informationStackView, collectionView, tableView, activityIndicator, textFieldCity, loaderView].forEach { views in
+        [informationStackView, collectionView, tableView, activityIndicator, textFieldCity].forEach { views in
             view.addSubview(views)
         }
     }
@@ -279,10 +271,6 @@ extension WeatherViewController {
             make.top.equalTo(collectionView.snp.bottom).offset(16)
             make.leading.trailing.equalToSuperview().inset(16)
             make.bottom.equalToSuperview().inset(24)
-        }
-
-        loaderView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
         }
     }
 }
@@ -423,12 +411,10 @@ extension WeatherViewController: WeatherViewModelDelegate {
 
     func didStartFetchingData() {
         activityIndicator.startAnimating()
-        loaderView.isHidden = false
     }
 
     func didFinishFetchingData() {
         activityIndicator.stopAnimating()
-        loaderView.isHidden = true
     }
 
     func updateBordersAndCornerRadius() {
